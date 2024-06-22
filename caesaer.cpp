@@ -10,7 +10,6 @@ __declspec(dllexport) char* decrypt(char* text, int key, char* result);
 
 char* encrypt (char* text, int key, char* result) {
     char* cipher = (char*)calloc(strlen(text) + 1, sizeof(char));
-    ;
         key = (key % 26 + 26) % 26; //range of alphabet
 
         for (int i=0; i < strlen(text); i++ ) {

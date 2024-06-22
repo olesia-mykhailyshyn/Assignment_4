@@ -4,6 +4,7 @@
 #include <limits>
 #include <stack>
 #include <windows.h>
+#include <fstream>
 
 using namespace std;
 
@@ -612,72 +613,76 @@ public:
 
     void encryptOrDecryptFile() {
         string fileName = "C:\\KSE\\Programming_paradigms\\Assignment_4\\sherlock.txt";
-        //cout << "Enter the file name for encrypting or decrypting:\n";
-        //getline(cin, fileName);
-        //cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear the input buffer
+        // cout << "Enter the file name for encrypting or decrypting:\n";
+        // getline(cin, fileName);
+        // cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear the input buffer
 
         string command;
-        cout << "Choose operation (encrypt/decrypt):\n";
+        cout << "Choose operation (encrypt/decrypt):" << endl;
         cin >> command;
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         int key;
-        cout << "Enter the key: ";
+        cout << "Enter the key:" << endl;
         cin >> key;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         if (access(fileName.c_str(), F_OK) == 0) {
             FILE* file = fopen(fileName.c_str(), "r+"); // open file for reading and writing
             if (file != nullptr) {
-                fseek(file, 0, SEEK_END); // Go to end of file to get size
+                fseek(file, 0, SEEK_END); // go to end of file to get size
                 int fileSize = ftell(file);
-                fseek(file, 0, SEEK_SET); // Rewind to start of file
+                fseek(file, 0, SEEK_SET); // back to start of file
 
                 if (fileSize == 0) {
-                    cout << "The file " << fileName << " is empty\n";
+                    cout << "The file " << fileName << " is empty" << endl;
                     fclose(file);
                     return;
                 }
 
-                char* loadedText = (char*)calloc(fileSize + 1, sizeof(char));
-                fread(loadedText, sizeof(char), fileSize, file);
-                loadedText[fileSize] = '\0';
+                int chunkSize = 32; // 128 bytes % 4(sizeof(int)) = 32
+                char* buffer = (char*)calloc(chunkSize + 1, sizeof(char));
+                char* result = (char*)calloc(chunkSize + 1, sizeof(char));
 
                 if (command == "encrypt") {
-                    char* result = (char*)calloc(fileSize + 1, sizeof(char));
-                    if (caesaer.encryptText(loadedText, key, result) == nullptr) {
-                        cout << "Failed to encrypt text\n";
+                    //keep reading until end of file
+                    while (!feof(file)) {
+                        size_t bytesRead = fread(buffer, sizeof(char), chunkSize, file);
+                        if (bytesRead > 0) {
+                            caesaer.encryptText(buffer, key, result);
+                            fseek(file, -bytesRead, SEEK_CUR);
+                            fwrite(result, sizeof(char), bytesRead, file);
+                            fflush(file); // Ensure data is written to disk
+                        }
                     }
-                    else {
-                        fseek(file, 0, SEEK_SET); // Move to start of file to overwrite content
-                        fwrite(result, sizeof(char), strlen(result), file);
-                        cout << "Text encrypted successfully\n";
-                    }
-                    free(result);
+                    cout << "Text encrypted successfully" << endl;
                 }
                 else if (command == "decrypt") {
-                    char* result = (char*)calloc(fileSize + 1, sizeof(char));
-                    if (caesaer.decryptText(loadedText, key, result) == nullptr) {
-                        cout << "Failed to decrypt text\n";
-                    } else {
-                        fseek(file, 0, SEEK_SET); // Move to start of file to overwrite content
-                        fwrite(result, sizeof(char), strlen(result), file);
-                        cout << "Text decrypted successfully\n";
+                    while (!feof(file)) {
+                        size_t bytesRead = fread(buffer, sizeof(char), chunkSize, file);
+                        if (bytesRead > 0) {
+                            caesaer.decryptText(buffer, key, result);
+                            fseek(file, -bytesRead, SEEK_CUR);
+                            fwrite(result, sizeof(char), bytesRead, file);
+                            fflush(file); // Ensure data is written to disk
+                        }
                     }
-                    free(result);
+                    cout << "Text decrypted successfully" << endl;
                 }
                 else {
-                    cout << "Invalid command\n";
+                    cout << "Invalid command" << endl;
                 }
 
+                free(buffer);
+                free(result);
                 fclose(file);
-                free(loadedText);
             }
             else {
-                cout << "Error opening file " << fileName << ".\n";
+                cout << "Error opening file " << fileName << endl;
             }
         }
         else {
-            cout << "File " << fileName << " not found.\n";
+            cout << "File " << fileName << " not found" << endl;
         }
     }
 };
