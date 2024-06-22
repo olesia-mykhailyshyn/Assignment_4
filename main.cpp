@@ -8,49 +8,49 @@
 using namespace std;
 
 class Caesaer {
-private:
-    HINSTANCE handle;
-public:
-    Caesaer() {
-        handle = LoadLibrary(TEXT("C:\\KSE\\Programming_paradigms\\Assignment_4\\caesaer.dll"));
-        if (handle == nullptr || handle == INVALID_HANDLE_VALUE)
+    private:
+        HINSTANCE handle;
+    public:
+        Caesaer() {
+            handle = LoadLibrary(TEXT("C:\\KSE\\Programming_paradigms\\Assignment_4\\caesaer.dll"));
+            if (handle == nullptr || handle == INVALID_HANDLE_VALUE)
+            {
+                cout << "Lib not found" << endl;
+                handle = nullptr;
+            }
+        }
+
+        ~Caesaer() {
+            FreeLibrary(handle);
+    }
+
+    char* encryptText(char* text, int key, char* result) {
+        typedef char*(*encrypt_ptr)(char*, int, char*);
+        auto encrypt = (encrypt_ptr)GetProcAddress(handle, "encrypt"); //encrypt_ptr -> auto = to avoid duplicating the type name
+
+        if (encrypt == nullptr)
         {
-            cout << "Lib not found" << endl;
-            handle = nullptr;
+            cout << "Proc not found" << endl;
+            return nullptr;
+        }
+        else {
+            return encrypt(text, key, result);
         }
     }
 
-    ~Caesaer() {
-        FreeLibrary(handle);
-}
+    char* decryptText(char* text, int key, char* result) {
+        typedef char*(*decrypt_ptr)(char*, int, char*);
+        auto decrypt = (decrypt_ptr)GetProcAddress(handle, "decrypt");
 
-char* encryptText(char* text, int key, char* result) {
-    typedef char*(*encrypt_ptr)(char*, int, char*);
-    auto encrypt = (encrypt_ptr)GetProcAddress(handle, "encrypt"); //encrypt_ptr -> auto = to avoid duplicating the type name
-
-    if (encrypt == nullptr)
-    {
-        cout << "Proc not found" << endl;
-        return nullptr;
+        if (decrypt == nullptr)
+        {
+            cout << "Proc not found" << endl;
+            return nullptr;
+        }
+        else {
+            return decrypt(text, key, result);
+        }
     }
-    else {
-        return encrypt(text, key, result);
-    }
-}
-
-char* decryptText(char* text, int key, char* result) {
-    typedef char*(*decrypt_ptr)(char*, int, char*);
-    auto decrypt = (decrypt_ptr)GetProcAddress(handle, "decrypt");
-
-    if (decrypt == nullptr)
-    {
-        cout << "Proc not found" << endl;
-        return nullptr;
-    }
-    else {
-        return decrypt(text, key, result);
-    }
-}
 };
 
 class Cursor {
@@ -113,7 +113,7 @@ public:
 
     char * getFromBuffer() {
     return buffer;
-}
+    }
 };
 
 class Text {
@@ -588,6 +588,8 @@ public:
             saveState();
             cout << "Text encrypted successfully\n";
         }
+        free(result);
+        result = nullptr;
     }
 
     void decryptText() {
@@ -604,6 +606,79 @@ public:
             saveState();
             cout << "Text encrypted successfully\n";
         }
+        free(result);
+        result = nullptr;
+    }
+
+    void encryptOrDecryptFile() {
+        string fileName = "C:\\KSE\\Programming_paradigms\\Assignment_4\\sherlock.txt";
+        //cout << "Enter the file name for encrypting or decrypting:\n";
+        //getline(cin, fileName);
+        //cin.ignore(numeric_limits<streamsize>::max(), '\n'); // clear the input buffer
+
+        string command;
+        cout << "Choose operation (encrypt/decrypt):\n";
+        cin >> command;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        int key;
+        cout << "Enter the key: ";
+        cin >> key;
+
+        if (access(fileName.c_str(), F_OK) == 0) {
+            FILE* file = fopen(fileName.c_str(), "r+"); // open file for reading and writing
+            if (file != nullptr) {
+                fseek(file, 0, SEEK_END); // Go to end of file to get size
+                int fileSize = ftell(file);
+                fseek(file, 0, SEEK_SET); // Rewind to start of file
+
+                if (fileSize == 0) {
+                    cout << "The file " << fileName << " is empty\n";
+                    fclose(file);
+                    return;
+                }
+
+                char* loadedText = (char*)calloc(fileSize + 1, sizeof(char));
+                fread(loadedText, sizeof(char), fileSize, file);
+                loadedText[fileSize] = '\0';
+
+                if (command == "encrypt") {
+                    char* result = (char*)calloc(fileSize + 1, sizeof(char));
+                    if (caesaer.encryptText(loadedText, key, result) == nullptr) {
+                        cout << "Failed to encrypt text\n";
+                    }
+                    else {
+                        fseek(file, 0, SEEK_SET); // Move to start of file to overwrite content
+                        fwrite(result, sizeof(char), strlen(result), file);
+                        cout << "Text encrypted successfully\n";
+                    }
+                    free(result);
+                }
+                else if (command == "decrypt") {
+                    char* result = (char*)calloc(fileSize + 1, sizeof(char));
+                    if (caesaer.decryptText(loadedText, key, result) == nullptr) {
+                        cout << "Failed to decrypt text\n";
+                    } else {
+                        fseek(file, 0, SEEK_SET); // Move to start of file to overwrite content
+                        fwrite(result, sizeof(char), strlen(result), file);
+                        cout << "Text decrypted successfully\n";
+                    }
+                    free(result);
+                }
+                else {
+                    cout << "Invalid command\n";
+                }
+
+                fclose(file);
+                free(loadedText);
+            }
+            else {
+                cout << "Error opening file " << fileName << ".\n";
+            }
+        }
+        else {
+            cout << "File " << fileName << " not found.\n";
+        }
     }
 };
 
@@ -612,8 +687,8 @@ int main() {
     Text text; // destructor will be called when main() ends
 
     while (true) {
-        cout << "\nChoose the command (1/2/3/4/5/6/7/8/9/undo/redo/cut/paste/copy/insert/encrypt/decrypt/exit):";
-        char command[10];
+        cout << "\nChoose the command (1/2/3/4/5/6/7/8/9/undo/redo/cut/paste/copy/insert/encrypt/decrypt/encryptOrDecryptFile/exit):";
+        char command[25];
         fgets(command, sizeof(command), stdin);
         command[strcspn(command, "\n")] = '\0';
 
@@ -644,6 +719,9 @@ int main() {
         }
         else if (strcmp(command, "decrypt") == 0) {
             text.decryptText();
+        }
+        else if (strcmp(command, "encryptOrDecryptFile") == 0) {
+            text.encryptOrDecryptFile();
         }
         else {
             switch (command[0]) {
