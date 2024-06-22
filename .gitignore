@@ -30,3 +30,16 @@
 *.exe
 *.out
 *.app
+cmake-build-debug/Testing/Temporary/LastTest.log
+cmake-build-debug/build.ninja
+cmake-build-debug/CMakeFiles/clion-Debug-log.txt
+.idea/vcs.xml
+cmake-build-debug/.cmake/api/v1/reply/cmakeFiles-v1-564c427cbc956524335a.json
+cmake-build-debug/.cmake/api/v1/reply/cmakeFiles-v1-db8a8a87641416bbe7a7.json
+cmake-build-debug/.cmake/api/v1/reply/codemodel-v2-5b91ed5dd0afa37a4832.json
+cmake-build-debug/.cmake/api/v1/reply/index-2024-06-22T13-03-38-0660.json
+cmake-build-debug/.cmake/api/v1/reply/index-2024-06-22T13-00-44-0172.json
+cmake-build-debug/.cmake/api/v1/reply/target-Assignment_4-Debug-51213b82808a2cb030b4.json
+cmake-build-debug/build.ninja
+cmake-build-debug/.cmake/api/v1/reply/target-Assignment_4-Debug-c264675c215fbead20df.json
+cmake-build-debug/.cmake/api/v1/reply/cmakeFiles-v1-564c427cbc956524335a.json
