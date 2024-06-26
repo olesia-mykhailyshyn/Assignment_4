@@ -1,5 +1,5 @@
-#include <cstring> // for strlen
-#include <cctype> //for upper and lower case
+#include <cstring>
+#include <cctype>
 #include <cstdlib>
 
 using namespace std;
@@ -8,58 +8,53 @@ extern "C" {
 __declspec(dllexport) char* encrypt(char* text, int key, char* result);
 __declspec(dllexport) char* decrypt(char* text, int key, char* result);
 
-char* encrypt (char* text, int key, char* result) {
-    char* cipher = (char*)calloc(strlen(text) + 1, sizeof(char));
-        key = (key % 26 + 26) % 26; //range of alphabet
+    char* encrypt(char* text, int key, char* result) {
+        key = (key % 26 + 26) % 26; // ensure key is within range of alphabet
 
-        for (int i=0; i < strlen(text); i++ ) {
+        int len = strlen(text);
+        for (int i = 0; i < len; i++) {
             char c = text[i];
 
-            if (isupper(c)) {
-                //apply Ceaser Cipher formula
-                int x = (c - 'A' + key) % 26;
-                //handle boundary condition
-                x = x % 26;
-                //convert to char
-                c = (char)(x + 'A');
+            if (isalpha(c)) {
+                if (isupper(c)) {
+                    int x = (c - 'A' + key) % 26;
+                    result[i] = (char)('A' + x);
+                }
+                else if (islower(c)) {
+                    int x = (c - 'a' + key) % 26;
+                    result[i] = (char)('a' + x);
+                }
             }
-            else if (islower(c)) {
-                int x = (c - 'a' + key) % 26;
-                x = x % 26;
-                c = (char)(x + 'a');
+            else {
+                result[i] = c; // copy non-alphabetic characters as is
             }
-            //cipher.insert(cipher.end(), 1, c); //insert in the end
-            result[i] = c;
         }
-        result[strlen(text)] = '\0';
-        return cipher;
+        result[len] = '\0';
+        return result;
     }
 
-char* decrypt (char* text, int key, char* result) {
-    char* plain = (char*)calloc(strlen(text) + 1, sizeof(char));
-        key = (key % 26 + 26) % 26;
+    char* decrypt(char* text, int key, char* result) {
+        key = (key % 26 + 26) % 26; // ensure key is within range of alphabet
 
-        for (int i=0; i < strlen(text); i++ ) {
+        int len = strlen(text);
+        for (int i = 0; i < len; i++) {
             char c = text[i];
 
-            if (isupper(c)) {
-                int x = (c - 'A' - key + 26) % 26;
-                if (x < 0) {
-                    x += 26;
+            if (isalpha(c)) {
+                if (isupper(c)) {
+                    int x = (c - 'A' - key + 26) % 26;
+                    result[i] = (char)('A' + x);
                 }
-                c = (char)(x + 'A');
-            }
-            else if (islower(c)) {
-                int x = (c - 'a' - key + 26) % 26;
-                if (x < 0) {
-                    x += 26;
+                else if (islower(c)) {
+                    int x = (c - 'a' - key + 26) % 26;
+                    result[i] = (char)('a' + x);
                 }
-                c = (char)(x + 'a');
             }
-            //plain.insert(plain.end(), 1, c);
-            result[i] = c;
+            else {
+                result[i] = c; // copy non-alphabetic characters as is
+            }
         }
-        result[strlen(text)] = '\0';
-        return plain;
+        result[len] = '\0';
+        return result;
     }
 }

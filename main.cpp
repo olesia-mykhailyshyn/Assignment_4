@@ -25,7 +25,7 @@ class Caesaer {
             FreeLibrary(handle);
     }
 
-    char* encryptText(char* text, int key, char* result) {
+    char* encrypt(char* text, int key, char* result) {
         typedef char*(*encrypt_ptr)(char*, int, char*);
         auto encrypt = (encrypt_ptr)GetProcAddress(handle, "encrypt"); //encrypt_ptr -> auto = to avoid duplicating the type name
 
@@ -34,12 +34,13 @@ class Caesaer {
             cout << "Proc not found" << endl;
             return nullptr;
         }
-        else {
+        else
+        {
             return encrypt(text, key, result);
         }
     }
 
-    char* decryptText(char* text, int key, char* result) {
+    char* decrypt(char* text, int key, char* result) {
         typedef char*(*decrypt_ptr)(char*, int, char*);
         auto decrypt = (decrypt_ptr)GetProcAddress(handle, "decrypt");
 
@@ -580,7 +581,7 @@ public:
         int key;
         cin >> key;
         char* result = (char*)calloc(textSize, sizeof(char));
-        if (caesaer.encryptText(text, key, result) == nullptr) {
+        if (caesaer.encrypt(text, key, result) == nullptr) {
             cout << "Failed to encrypt text\n";
         }
         else {
@@ -598,7 +599,7 @@ public:
         int key;
         cin >> key;
         char* result = (char*)calloc(textSize, sizeof(char));
-        if (caesaer.decryptText(text, key, result) == nullptr) {
+        if (caesaer.decrypt(text, key, result) == nullptr) {
             cout << "Failed to encrypt text\n";
         }
         else {
@@ -640,31 +641,32 @@ public:
                     return;
                 }
 
-                int chunkSize = 32; // 128 bytes % 4(sizeof(int)) = 32
+                //int chunkSize = 32; // 128 bytes % 4(sizeof(int)) = 32
+                int chunkSize = 128;// because we read chars
                 char* buffer = (char*)calloc(chunkSize + 1, sizeof(char));
                 char* result = (char*)calloc(chunkSize + 1, sizeof(char));
 
                 if (command == "encrypt") {
                     //keep reading until end of file
                     while (!feof(file)) {
-                        size_t bytesRead = fread(buffer, sizeof(char), chunkSize, file);
+                        int bytesRead = fread(buffer, sizeof(char), chunkSize, file); //read from file to buffer
                         if (bytesRead > 0) {
-                            caesaer.encryptText(buffer, key, result);
-                            fseek(file, -bytesRead, SEEK_CUR);
+                            caesaer.encrypt(buffer, key, result);
+                            fseek(file, -bytesRead, SEEK_CUR); //to current position
                             fwrite(result, sizeof(char), bytesRead, file);
-                            fflush(file); // Ensure data is written to disk
+                            fflush(file); // ensure data is written to disk + synchronization
                         }
                     }
                     cout << "Text encrypted successfully" << endl;
                 }
                 else if (command == "decrypt") {
                     while (!feof(file)) {
-                        size_t bytesRead = fread(buffer, sizeof(char), chunkSize, file);
+                        int bytesRead = fread(buffer, sizeof(char), chunkSize, file);
                         if (bytesRead > 0) {
-                            caesaer.decryptText(buffer, key, result);
+                            caesaer.decrypt(buffer, key, result);
                             fseek(file, -bytesRead, SEEK_CUR);
                             fwrite(result, sizeof(char), bytesRead, file);
-                            fflush(file); // Ensure data is written to disk
+                            fflush(file);
                         }
                     }
                     cout << "Text decrypted successfully" << endl;
@@ -721,12 +723,15 @@ int main() {
         }
         else if (strcmp(command, "encrypt") == 0) {
             text.encryptText();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); //clear input buffer
         }
         else if (strcmp(command, "decrypt") == 0) {
             text.decryptText();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); //clear input buffer
         }
         else if (strcmp(command, "encryptOrDecryptFile") == 0) {
             text.encryptOrDecryptFile();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); //clear input buffer
         }
         else {
             switch (command[0]) {
